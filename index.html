@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#f5f4ef">
 <title>PDA 입고·빈병합</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -28,7 +28,7 @@
   <!-- 로그인 -->
   <section id="scr-login" class="screen">
     <div class="login-box">
-      <div class="logo">PDA</div>
+      <div class="logo">P</div>
       <h1>PDA 입고·빈병합</h1>
       <p class="muted">사번과 PIN으로 로그인하세요</p>
       <label>사번<input id="lg-sabun" inputmode="numeric" autocomplete="username" maxlength="20"></label>
@@ -54,26 +54,26 @@
     <!-- 국내/해외입고 -->
     <div id="pane-inbound" class="pane hidden">
       <div class="fixed-banner">
-        <span id="ib-title">해외입고</span> · 이동셀 <b id="ib-fixed">-</b> 고정
+        <span class="fb-k"><span id="ib-title">해외입고</span> 이동셀 고정</span><b id="ib-fixed">-</b>
       </div>
       <div class="card">
         <div class="field">
-          <div class="flabel">1. 상품 바코드 스캔</div>
+          <div class="flabel"><i class="no">1</i>상품 바코드 스캔</div>
           <div class="row"><input id="ib-barcode" class="scan" inputmode="none" autocomplete="off" placeholder="상품 바코드 스캔"><button class="kbd" data-for="ib-barcode" type="button">⌨</button></div>
           <div id="ib-item" class="iteminfo"></div>
         </div>
         <div class="row2">
-          <div class="field"><div class="flabel">2. 박스 수량</div><input id="ib-box" class="num" inputmode="numeric" value="1" autocomplete="off"></div>
+          <div class="field"><div class="flabel"><i class="no">2</i>박스 수량</div><input id="ib-box" class="num" inputmode="numeric" value="1" autocomplete="off"></div>
           <div class="field"><div class="flabel">낱개(빠진수량)</div><input id="ib-loose" class="num" inputmode="numeric" value="0" autocomplete="off"></div>
         </div>
         <div id="ib-total" class="hint"></div>
         <div class="field">
-          <div class="flabel">3. 유통기한 <span class="muted">(YYMMDD 또는 YYYYMMDD)</span></div>
+          <div class="flabel"><i class="no">3</i>유통기한 <span class="muted">YYMMDD</span></div>
           <input id="ib-exp" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="예: 271231">
           <div id="ib-exp-view" class="hint"></div>
         </div>
         <div class="field">
-          <div class="flabel">4. 적치빈 스캔 <span class="accent">(스캔 시 즉시 저장)</span></div>
+          <div class="flabel"><i class="no">4</i>적치빈 스캔 <span class="accent">스캔하면 바로 저장</span></div>
           <div class="row"><input id="ib-to" class="scan" inputmode="none" autocomplete="off" placeholder="적치빈 바코드 스캔"><button class="kbd" data-for="ib-to" type="button">⌨</button></div>
         </div>
         <button id="ib-save" class="btn primary big" type="button">저장</button>
@@ -84,9 +84,9 @@
     <!-- 빈병합 -->
     <div id="pane-bin" class="pane hidden">
       <div class="steps">
-        <div class="step" data-step="1"><small>STEP 1</small>이동셀(FROM)</div>
-        <div class="step" data-step="2"><small>STEP 2</small>상품 &amp; 수량</div>
-        <div class="step" data-step="3"><small>STEP 3</small>적치셀(TO)</div>
+        <div class="step" data-step="1"><small>1</small>이동셀 FROM</div>
+        <div class="step" data-step="2"><small>2</small>상품·수량</div>
+        <div class="step" data-step="3"><small>3</small>적치셀 TO</div>
       </div>
 
       <div id="bin-s1" class="card">
@@ -124,7 +124,7 @@
 
       <div id="bin-s3" class="card hidden">
         <div id="bin-summary" class="summary"></div>
-        <div class="flabel">적치셀(TO) 스캔 <span class="accent">(스캔 시 즉시 저장)</span></div>
+        <div class="flabel">적치셀(TO) 스캔 <span class="accent">스캔하면 바로 저장</span></div>
         <div class="row"><input id="bin-to" class="scan" inputmode="none" autocomplete="off" placeholder="예: A05-01-04"><button class="kbd" data-for="bin-to" type="button">⌨</button></div>
         <div class="row2">
           <button id="bin-back" class="btn" type="button">이전 단계</button>

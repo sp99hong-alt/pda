@@ -525,6 +525,7 @@ function showScreen(name) {
 function setMode(mode) {
   if (!['국내입고', '해외입고', '빈병합'].includes(mode)) mode = '국내입고';
   S.mode = mode;
+  document.body.dataset.mode = mode;
   localStorage.setItem('pda.mode', mode);
   document.querySelectorAll('.mode-tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
   const inbound = TYPES_INBOUND.includes(mode);
@@ -768,8 +769,8 @@ function renderBasket() {
   const list = S.bin.basket;
   $('bin-basket-count').textContent = `${list.length}개 품목 / ${list.reduce((a, x) => a + x.qty, 0)} EA`;
   if (!list.length) { box.innerHTML = '<div class="empty">담긴 상품이 없습니다.</div>'; return; }
-  box.innerHTML = list.map((x, i) => `<div class="bi"><div><div>${esc(x.name || x.barcode)}</div><div class="muted" style="font-size:12px">${esc(x.item || x.barcode)}${x.expiry ? ' · ' + esc(x.expiry) : ''}</div></div>` +
-    `<div style="display:flex;align-items:center"><button type="button" data-q="${i}">수량</button><span class="q">${x.qty}</span><button type="button" data-d="${i}">삭제</button></div></div>`).join('');
+  box.innerHTML = list.map((x, i) => `<div class="bi"><div><div>${esc(x.name || x.barcode)}</div><div class="bi-sub">${esc(x.item || x.barcode)}${x.expiry ? ' · ' + esc(x.expiry) : ''}</div></div>` +
+    `<div class="bi-act"><button type="button" data-q="${i}">수량</button><span class="q">${x.qty}</span><button type="button" data-d="${i}">삭제</button></div></div>`).join('');
 }
 
 function renderSummary() {
@@ -877,7 +878,7 @@ function recCard(r, opts = {}) {
   return `<div class="rec${r.status === '삭제' ? ' del' : ''}" data-id="${esc(r.id)}" data-src="${opts.src || ''}">` +
     `<div class="l1"><span><span class="badge ${esc(r.type)}">${esc(r.type)}</span> <span class="nm">${esc(r.itemName || r.barcode)}</span></span>${stBadge}${svBadge}</div>` +
     `<div class="l2">${esc(fmtTime(r.time))} · ${esc(r.from)} → ${esc(r.to)} · ${esc(qtyText(r))}${r.expiry ? ' · 유통 ' + esc(r.expiry) : ''}` +
-    `${opts.showWorker ? ' · ' + esc(r.name || r.sabun) : ''}${r.error ? '<br><span style="color:#fca5a5">거부: ' + esc(r.error) + '</span>' : ''}</div></div>`;
+    `${opts.showWorker ? ' · ' + esc(r.name || r.sabun) : ''}${r.error ? '<br><span class="rej">거부: ' + esc(r.error) + '</span>' : ''}</div></div>`;
 }
 
 async function renderRecent() {
@@ -980,7 +981,7 @@ async function serverRecordDialog(id) {
     return;
   }
   const f = (label, key, mode) => `<label>${label}<input id="ed-${key}" inputmode="${mode || 'text'}" value="${esc(r[key])}" autocomplete="off"></label>`;
-  const body = `<div style="white-space:pre-line;font-size:13px;color:#94a3b8">${esc(info)}</div>` +
+  const body = `<div class="info-pre">${esc(info)}</div>` +
     `<div class="row2">${f('박스수량', 'box', 'numeric')}${f('낱개수량', 'loose', 'numeric')}</div>` +
     `<div class="row2">${f('입수', 'ipsu', 'numeric')}${f('유통기한(YYYY-MM-DD)', 'expiry', 'numeric')}</div>` +
     `<div class="row2">${f('이동셀', 'from')}${f('적치셀', 'to')}</div>${f('비고', 'note')}`;
