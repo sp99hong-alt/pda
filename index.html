@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<title>PDA 입고·빈병합</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- 상단바 -->
+<header id="topbar" class="hidden">
+  <div class="tb-left">
+    <div class="tb-title">PDA 입고·빈병합</div>
+    <div class="tb-sub"><span id="tb-user"></span> · <span id="tb-center"></span></div>
+  </div>
+  <div class="tb-right">
+    <span id="tb-net" class="net off" title="네트워크">●</span>
+    <button id="tb-sync" class="chip" type="button">미전송 <b id="tb-pending">0</b></button>
+    <button id="tb-menu" class="icon-btn" type="button" aria-label="메뉴">☰</button>
+  </div>
+</header>
+
+<main>
+  <!-- 로그인 -->
+  <section id="scr-login" class="screen">
+    <div class="login-box">
+      <div class="logo">PDA</div>
+      <h1>PDA 입고·빈병합</h1>
+      <p class="muted">사번과 PIN으로 로그인하세요</p>
+      <label>사번<input id="lg-sabun" inputmode="numeric" autocomplete="username" maxlength="20"></label>
+      <label>PIN<input id="lg-pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8"></label>
+      <button id="lg-btn" class="btn primary big" type="button">로그인</button>
+      <p id="lg-msg" class="msg"></p>
+      <div class="login-foot">
+        <span>기기 <b id="lg-device"></b></span>
+        <span id="lg-net"></span>
+        <button id="lg-settings" class="link" type="button">서버 설정</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 작업 -->
+  <section id="scr-work" class="screen hidden">
+    <div class="mode-tabs">
+      <button type="button" data-mode="국내입고">국내입고</button>
+      <button type="button" data-mode="해외입고">해외입고</button>
+      <button type="button" data-mode="빈병합">빈병합</button>
+    </div>
+
+    <!-- 국내/해외입고 -->
+    <div id="pane-inbound" class="pane hidden">
+      <div class="fixed-banner">
+        <span id="ib-title">해외입고</span> · 이동셀 <b id="ib-fixed">-</b> 고정
+      </div>
+      <div class="card">
+        <div class="field">
+          <div class="flabel">1. 상품 바코드 스캔</div>
+          <div class="row"><input id="ib-barcode" class="scan" inputmode="none" autocomplete="off" placeholder="상품 바코드 스캔"><button class="kbd" data-for="ib-barcode" type="button">⌨</button></div>
+          <div id="ib-item" class="iteminfo"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><div class="flabel">2. 박스 수량</div><input id="ib-box" class="num" inputmode="numeric" value="1" autocomplete="off"></div>
+          <div class="field"><div class="flabel">낱개(빠진수량)</div><input id="ib-loose" class="num" inputmode="numeric" value="0" autocomplete="off"></div>
+        </div>
+        <div id="ib-total" class="hint"></div>
+        <div class="field">
+          <div class="flabel">3. 유통기한 <span class="muted">(YYMMDD 또는 YYYYMMDD)</span></div>
+          <input id="ib-exp" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="예: 271231">
+          <div id="ib-exp-view" class="hint"></div>
+        </div>
+        <div class="field">
+          <div class="flabel">4. 적치빈 스캔 <span class="accent">(스캔 시 즉시 저장)</span></div>
+          <div class="row"><input id="ib-to" class="scan" inputmode="none" autocomplete="off" placeholder="적치빈 바코드 스캔"><button class="kbd" data-for="ib-to" type="button">⌨</button></div>
+        </div>
+        <button id="ib-save" class="btn primary big" type="button">저장</button>
+      </div>
+      <div class="recent"><div class="recent-title">최근 저장 (이 기기)</div><div id="ib-recent"></div></div>
+    </div>
+
+    <!-- 빈병합 -->
+    <div id="pane-bin" class="pane hidden">
+      <div class="steps">
+        <div class="step" data-step="1"><small>STEP 1</small>이동셀(FROM)</div>
+        <div class="step" data-step="2"><small>STEP 2</small>상품 &amp; 수량</div>
+        <div class="step" data-step="3"><small>STEP 3</small>적치셀(TO)</div>
+      </div>
+
+      <div id="bin-s1" class="card">
+        <div class="flabel">출발 이동셀(FROM) 스캔</div>
+        <div class="row"><input id="bin-from" class="scan" inputmode="none" autocomplete="off" placeholder="예: B03-02-03"><button class="kbd" data-for="bin-from" type="button">⌨</button></div>
+        <button id="bin-from-next" class="btn primary big" type="button">이동셀 고정 및 다음 →</button>
+      </div>
+
+      <div id="bin-s2" class="card hidden">
+        <div class="fixedbar">고정 이동셀 <b id="bin-from-view"></b><button id="bin-change" class="link" type="button">셀 변경</button></div>
+        <div class="seg">
+          <button type="button" data-scan="단건">단건 스캔</button>
+          <button type="button" data-scan="다건">다건 일괄(Batch)</button>
+        </div>
+        <div class="field">
+          <div class="flabel" id="bin-bc-label">상품 바코드 스캔</div>
+          <div class="row"><input id="bin-barcode" class="scan" inputmode="none" autocomplete="off" placeholder="상품 바코드 스캔"><button class="kbd" data-for="bin-barcode" type="button">⌨</button></div>
+          <div id="bin-item" class="iteminfo"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><div class="flabel">수량(EA)</div><input id="bin-qty" class="num" inputmode="numeric" value="1" autocomplete="off"></div>
+          <div class="field"><div class="flabel">유통기한 <span id="bin-exp-opt" class="muted">(선택)</span></div><input id="bin-exp" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="YYMMDD"></div>
+        </div>
+        <div id="bin-exp-view" class="hint"></div>
+        <div id="bin-single-act">
+          <button id="bin-to-step3" class="btn green big" type="button">적치셀 지정으로 이동 →</button>
+        </div>
+        <div id="bin-batch-act" class="hidden">
+          <div class="hint">스캔하면 장바구니에 담깁니다. 같은 상품을 다시 스캔하면 수량이 늘어납니다.</div>
+          <div class="basket-head">TO셀 장바구니 <b id="bin-basket-count">0개</b></div>
+          <div id="bin-basket" class="basket"></div>
+          <button id="bin-batch-step3" class="btn orange big" type="button">동일 TO셀로 일괄 적치 →</button>
+        </div>
+      </div>
+
+      <div id="bin-s3" class="card hidden">
+        <div id="bin-summary" class="summary"></div>
+        <div class="flabel">적치셀(TO) 스캔 <span class="accent">(스캔 시 즉시 저장)</span></div>
+        <div class="row"><input id="bin-to" class="scan" inputmode="none" autocomplete="off" placeholder="예: A05-01-04"><button class="kbd" data-for="bin-to" type="button">⌨</button></div>
+        <div class="row2">
+          <button id="bin-back" class="btn" type="button">이전 단계</button>
+          <button id="bin-save" class="btn purple" type="button">적치셀 저장</button>
+        </div>
+      </div>
+
+      <div id="bin-job" class="jobbar hidden">
+        <div>이 셀 작업: <b id="bin-job-count">0</b>건 / <b id="bin-job-total">0</b> EA</div>
+        <div class="row2">
+          <button id="bin-empty" class="btn red" type="button">원천셀 공빈 확정</button>
+          <button id="bin-newcell" class="btn" type="button">새 셀 시작</button>
+        </div>
+      </div>
+      <div class="recent"><div class="recent-title">최근 저장 (이 기기)</div><div id="bin-recent"></div></div>
+    </div>
+  </section>
+
+  <!-- 기록 조회 -->
+  <section id="scr-records" class="screen hidden">
+    <div class="card">
+      <div class="row2">
+        <label class="mini">시작일<input id="rc-from" type="date"></label>
+        <label class="mini">종료일<input id="rc-to" type="date"></label>
+      </div>
+      <div class="row2">
+        <label class="mini">구분
+          <select id="rc-type"><option value="">전체</option><option>국내입고</option><option>해외입고</option><option>빈병합</option></select>
+        </label>
+        <label class="mini" id="rc-worker-wrap">작업자 사번<input id="rc-worker" inputmode="numeric" placeholder="전체"></label>
+      </div>
+      <label class="mini">검색 (바코드·아이템·상품명·셀)<input id="rc-q" autocomplete="off"></label>
+      <label class="mini check hidden" id="rc-deleted-wrap"><input id="rc-deleted" type="checkbox"> 삭제된 기록 포함</label>
+      <div class="row2">
+        <button id="rc-search" class="btn primary" type="button">서버 조회</button>
+        <button id="rc-csv" class="btn green hidden" type="button">엑셀(CSV) 다운로드</button>
+      </div>
+    </div>
+    <div class="seg" id="rc-tabs">
+      <button type="button" data-tab="local">이 기기 미전송 <b id="rc-local-count">0</b></button>
+      <button type="button" data-tab="server">서버 기록 <b id="rc-server-count">-</b></button>
+    </div>
+    <div id="rc-list" class="reclist"></div>
+  </section>
+</main>
+
+<!-- 메뉴 -->
+<div id="menu" class="overlay hidden">
+  <div class="menu-panel">
+    <div class="menu-user" id="menu-user"></div>
+    <button type="button" data-menu="work" class="menu-item" id="menu-work">작업 화면</button>
+    <button type="button" data-menu="records" class="menu-item">기록 조회</button>
+    <button type="button" data-menu="sync" class="menu-item" id="menu-sync">지금 업로드 / 마스터 받기</button>
+    <button type="button" data-menu="info" class="menu-item">기기·마스터 정보</button>
+    <button type="button" data-menu="logout" class="menu-item danger">로그아웃</button>
+    <button type="button" data-menu="close" class="menu-item muted">닫기</button>
+  </div>
+</div>
+
+<!-- 공용 대화상자 -->
+<div id="modal" class="overlay hidden">
+  <div class="modal-box">
+    <div id="modal-title" class="modal-title"></div>
+    <div id="modal-body" class="modal-body"></div>
+    <div id="modal-btns" class="modal-btns"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="config.js"></script>
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
