@@ -1,5 +1,5 @@
 // 오프라인 동작용 서비스 워커. 앱 파일을 바꾸면 VERSION을 올리세요.
-const VERSION = 'pda-v1.1.4';
+const VERSION = 'pda-v1.1.5';
 const FILES = ['./', 'index.html', 'styles.css', 'config.js', 'db.js', 'app.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/mh_logo.png', 'icons/cello_logo.png'];
 

@@ -875,7 +875,7 @@ function recCard(r, opts = {}) {
   const st = r.syncStatus;
   const stBadge = st ? `<span class="badge ${st}">${st === 'pending' ? '미전송' : st === 'rejected' ? '거부' : '전송완료'}</span>` : '';
   const svBadge = !st && r.status && r.status !== '정상' ? `<span class="badge ${esc(r.status)}">${esc(r.status)}</span>` : '';
-  return `<div class="rec${r.status === '삭제' ? ' del' : ''}" data-id="${esc(r.id)}" data-src="${opts.src || ''}">` +
+  return `<div class="rec t-${esc(r.type)}${r.status === '삭제' ? ' del' : ''}" data-id="${esc(r.id)}" data-src="${opts.src || ''}">` +
     `<div class="l1"><span><span class="badge ${esc(r.type)}">${esc(r.type)}</span> <span class="nm">${esc(r.itemName || r.barcode)}</span></span>${stBadge}${svBadge}</div>` +
     `<div class="l2">${esc(fmtTime(r.time))} · ${esc(r.from)} → ${esc(r.to)} · ${esc(qtyText(r))}${r.expiry ? ' · 유통 ' + esc(r.expiry) : ''}` +
     `${opts.showWorker ? ' · ' + esc(r.name || r.sabun) : ''}${r.error ? '<br><span class="rej">거부: ' + esc(r.error) + '</span>' : ''}</div></div>`;
