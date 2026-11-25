@@ -133,8 +133,9 @@ function onEnter(el, fn) {
 }
 
 // 스캔 칸: Enter 로 처리하고, 스캐너가 Enter 를 안 보내도 입력이 멈추면(0.3초) 같은 처리.
+// 자동 처리는 ready(값)가 참일 때만(마스터에 있는 바코드·셀) — 덜 들어온 값으로 오류를 내고 칸을 선택해 버리지 않게.
 // Enter 뒤에 입력 신호가 늦게 오는 기기에서 같은 값을 두 번 처리하지 않음. ⌨ 직접 입력 중에는 Enter 만 기다림
-function onScan(el, fn) {
+function onScan(el, fn, ready) {
   let t = 0, ran = null;
   const run = () => { clearTimeout(t); ran = el.value; fn(); };
   el.addEventListener('keydown', e => {
@@ -146,8 +147,14 @@ function onScan(el, fn) {
     if (el.value === ran) return;
     ran = null;
     if (el.getAttribute('inputmode') !== 'none' || !norm(el.value)) return;
-    t = setTimeout(run, 300);
+    t = setTimeout(() => { if (ready(norm(el.value))) run(); }, 300);
   });
+}
+
+const knownBarcode = v => !!lookup(v);
+function knownCell(v) {   // 로케이션 마스터가 없으면 셀이 완성됐는지 알 수 없으므로 자동 처리 안 함
+  const list = (S.master.locations || {})[S.center ? S.center.code : ''] || [];
+  return list.includes(normCell(v));
 }
 
 function focusSel(el) {
@@ -199,6 +206,8 @@ function qtyText(r) {
 
 const EMPTY_MASTER = { centers: [], barcodes: [], locations: {}, activeUsers: [], config: {}, syncedAt: '' };
 
+const hasBarcodes = () => (S.master.barcodes || []).length > 0 && !!S.master.bcVer;
+
 function buildMaps() {
   S.bcMap = new Map();
   const items = new Map();
@@ -219,10 +228,15 @@ function validCell(cell) {
   return !list.length || list.includes(cell);
 }
 
+// 서버가 바코드를 생략해 보내면(barcodes: null, 버전이 같거나 로그인 때 생략) 기기에 있는 바코드를 그대로 씀.
+// 바코드(약 2MB)는 'barcodes' 에 따로 저장해 바뀌었을 때만 다시 씀
 async function saveMaster(m) {
-  S.master = Object.assign({}, EMPTY_MASTER, m);
-  await DB.kvSet('master', S.master);
-  buildMaps();
+  const bcChanged = Array.isArray(m.barcodes);
+  const barcodes = bcChanged ? m.barcodes : (S.master.barcodes || []);
+  const bcVer = bcChanged ? (m.bcVer || '') : (S.master.bcVer || '');
+  S.master = Object.assign({}, EMPTY_MASTER, m, { barcodes, bcVer });
+  await DB.kvSet('master', Object.assign({}, S.master, { barcodes: null }));
+  if (bcChanged) { await DB.kvSet('barcodes', barcodes); buildMaps(); }
   // 사용 중지된 사용자의 오프라인 로그인 정보 삭제, 이름·역할·센터 갱신
   const vers = await DB.kvGet('verifiers', {});
   const active = new Map((S.master.activeUsers || []).map(u => [u.s, u]));
@@ -297,7 +311,7 @@ async function ensureToken(interactive) {
   if (!interactive) return null;
   const pin = await promptBox('PIN 확인', `서버 접속을 위해 ${S.user.name}(${S.user.sabun}) 님의 PIN을 입력하세요.`, { type: 'password', inputmode: 'numeric' });
   if (!pin) return null;
-  const res = await api('login', { sabun: S.user.sabun, pin });
+  const res = await api('login', { sabun: S.user.sabun, pin, hasBc: hasBarcodes() });
   await afterOnlineLogin(res, pin);
   return res.token;
 }
@@ -359,7 +373,7 @@ async function sync(interactive) {
         if (jchunk.length) await DB.putMany('jobs', jchunk);
       }
     }
-    const m = await api('master', { token });
+    const m = await api('master', { token, bcVer: S.master.bcVer || '' }, 60000);
     await saveMaster(m.master);
     await purgeOld();
     await DB.kvSet('lastSync', Date.now());
@@ -424,7 +438,7 @@ async function doLogin() {
   try {
     if (apiUrl() && navigator.onLine) {
       try {
-        const res = await api('login', { sabun, pin }, 15000);
+        const res = await api('login', { sabun, pin, hasBc: hasBarcodes() }, 15000);
         await afterOnlineLogin(res, pin);
         profile = res.user;
       } catch (e) {
@@ -1133,20 +1147,20 @@ function bind() {
       if (last && !$('ib-exp').value) { $('ib-exp').value = last; showExp($('ib-exp'), $('ib-exp-view')); }
       focusSel($('ib-box'));
     } else fail($('ib-barcode'), '바코드마스터에 없는 바코드입니다.');
-  });
+  }, knownBarcode);
   $('ib-barcode').addEventListener('input', () => {
     if (S.ibItem && S.ibItem.barcode === norm($('ib-barcode').value)) return;   // 늦게 온 같은 값
     S.ibItem = null; $('ib-item').textContent = ''; $('ib-total').textContent = ''; });
   onEnter($('ib-box'), () => focusSel($('ib-loose')));
   onEnter($('ib-loose'), () => focusSel($('ib-exp')));
   onEnter($('ib-exp'), () => { const p = showExp($('ib-exp'), $('ib-exp-view')); if (p.ok || p.empty) focusSel($('ib-to')); else fail($('ib-exp'), p.msg); });
-  onScan($('ib-to'), ibSave);
+  onScan($('ib-to'), ibSave, knownCell);
   ['ib-box', 'ib-loose'].forEach(id => $(id).addEventListener('input', ibTotal));
   $('ib-exp').addEventListener('input', () => showExp($('ib-exp'), $('ib-exp-view')));
   $('ib-save').onclick = ibSave;
 
   // 빈병합
-  onScan($('bin-from'), binFixFrom);
+  onScan($('bin-from'), binFixFrom, knownCell);
   $('bin-from-next').onclick = binFixFrom;
   document.querySelectorAll('#bin-s2 .seg button').forEach(b => b.onclick = () => {
     if (S.bin.scanMode === b.dataset.scan) return;
@@ -1158,7 +1172,7 @@ function bind() {
     if (!norm($('bin-barcode').value)) return;
     if (S.bin.scanMode === '다건') { binAddBasket(); return; }
     if (binLookup()) { beep(true); focusSel($('bin-qty')); } else fail($('bin-barcode'), '바코드마스터에 없는 바코드입니다.');
-  });
+  }, knownBarcode);
   $('bin-barcode').addEventListener('input', () => { if (S.bin.scanMode === '단건' && !(S.bin.item && S.bin.item.barcode === norm($('bin-barcode').value))) { S.bin.item = null; $('bin-item').textContent = ''; } });
   onEnter($('bin-qty'), () => focusSel($('bin-exp')));
   onEnter($('bin-exp'), () => { if (S.bin.scanMode === '다건') focusSel($('bin-barcode')); else binToStep3(); });
@@ -1178,7 +1192,7 @@ function bind() {
       binRender();
     }
   };
-  onScan($('bin-to'), binSave);
+  onScan($('bin-to'), binSave, knownCell);
   $('bin-save').onclick = binSave;
   $('bin-back').onclick = () => { S.bin.step = 2; S.bin.pending = null; binRender(); };
   $('bin-empty').onclick = () => binCloseJob(true);
@@ -1216,6 +1230,7 @@ async function init() {
   S.deviceSalt = dev.salt;
   $('lg-device').textContent = S.deviceId;
   S.master = Object.assign({}, EMPTY_MASTER, await DB.kvGet('master', {}));
+  if (!Array.isArray(S.master.barcodes)) S.master.barcodes = await DB.kvGet('barcodes', []);   // 예전 버전은 master 안에 함께 저장
   buildMaps();
   updateNet();
   refreshPending();
