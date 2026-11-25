@@ -591,7 +591,7 @@ async function ibSave() {
   if (box + loose <= 0) return fail(boxEl, '수량을 입력하세요.');
   if (box > 99999 || loose > 99999) return fail(boxEl, '수량이 너무 큽니다.');
   const exp = parseExp(expEl.value);
-  if (!exp.ok) return fail(expEl, exp.msg || '유통기한을 입력하세요. (YYMMDD)');
+  if (!exp.ok && !exp.empty) return fail(expEl, exp.msg);   // 비대상 품목은 비워 두고 저장
   const to = normCell(toEl.value);
   if (!to) return fail(toEl, '적치빈을 스캔하세요.');
   if (to === fc) return fail(toEl, '적치빈이 고정 이동셀과 같습니다.');
@@ -601,10 +601,10 @@ async function ibSave() {
   const it = S.ibItem;
   const rec = makeRecord({
     type: S.mode, from: fc, barcode: it.barcode, item: it.item, itemName: it.name, box, loose, ipsu: it.ipsu,
-    expiry: exp.date, to, scanMode: '', note: it.unknown ? '미등록바코드' : ''
+    expiry: exp.ok ? exp.date : '', to, scanMode: '', note: it.unknown ? '미등록바코드' : ''
   });
   await DB.put('records', rec);
-  S.lastExp[it.barcode] = exp.raw;
+  if (exp.ok) S.lastExp[it.barcode] = exp.raw;
   beep(true);
   toast(`저장 완료: ${it.name || it.barcode} → ${to}`);
   bcEl.value = ''; boxEl.value = '1'; looseEl.value = '0'; expEl.value = ''; toEl.value = '';
@@ -1119,7 +1119,7 @@ function bind() {
   $('ib-barcode').addEventListener('input', () => { S.ibItem = null; $('ib-item').textContent = ''; $('ib-total').textContent = ''; });
   onEnter($('ib-box'), () => focusSel($('ib-loose')));
   onEnter($('ib-loose'), () => focusSel($('ib-exp')));
-  onEnter($('ib-exp'), () => { const p = showExp($('ib-exp'), $('ib-exp-view')); if (p.ok) focusSel($('ib-to')); else fail($('ib-exp'), p.msg || '유통기한을 입력하세요.'); });
+  onEnter($('ib-exp'), () => { const p = showExp($('ib-exp'), $('ib-exp-view')); if (p.ok || p.empty) focusSel($('ib-to')); else fail($('ib-exp'), p.msg); });
   onEnter($('ib-to'), ibSave);
   ['ib-box', 'ib-loose'].forEach(id => $(id).addEventListener('input', ibTotal));
   $('ib-exp').addEventListener('input', () => showExp($('ib-exp'), $('ib-exp-view')));
