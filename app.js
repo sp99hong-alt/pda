@@ -142,7 +142,7 @@ function parseExp(v) {
   let y, m, d;
   if (s.length === 6) { y = 2000 + Number(s.slice(0, 2)); m = Number(s.slice(2, 4)); d = Number(s.slice(4, 6)); }
   else if (s.length === 8) { y = Number(s.slice(0, 4)); m = Number(s.slice(4, 6)); d = Number(s.slice(6, 8)); }
-  else return { ok: false, msg: '6자리(YYMMDD) 또는 8자리(YYYYMMDD)로 입력하세요' };
+  else return { ok: false, msg: 'YYMMDD 6자리로 입력' };
   const dt = new Date(y, m - 1, d);
   if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return { ok: false, msg: '없는 날짜입니다' };
   const today = new Date(); today.setHours(0, 0, 0, 0);

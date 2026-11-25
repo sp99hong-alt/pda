@@ -194,3 +194,22 @@ label.check input { width: 20px; height: 20px; margin: 0; accent-color: var(--ac
 label.check input { margin-right: 8px; }
 .foot-dev .logo-cello { margin-right: 8px; }
 .foot-dev > b { margin-left: 4px; }
+
+/* ── 입고 화면 한 화면 맞춤(시안2: 저장 버튼이 화면 맨 아래에 오도록) ── */
+.row > * + * { margin-left: 8px; }   /* 바코드칸과 ⌨ 사이(위의 6px 를 덮어씀) */
+.mode-tabs { margin-bottom: 10px; }
+.ib-compact .card { padding: 12px 12px 14px; }
+.ib-compact .fixed-banner { margin: 0 0 12px; padding: 9px 12px; border-radius: 10px; }
+.ib-compact .field { margin-bottom: 10px; }
+.ib-compact input { margin-top: 5px; }
+.ib-compact input.num { padding: 12px 4px; }
+.ib-compact input.exp { font-family: var(--mono); font-weight: 700; padding: 12px 6px; text-align: center; }
+.ib-compact .kbd { margin-top: 5px; }
+.ib-compact .iteminfo { margin-top: 5px; min-height: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1.7fr; grid-gap: 8px; }
+.row3 .field { margin-bottom: 0; }
+.hints { display: flex; justify-content: space-between; min-height: 18px; margin: 5px 0 8px; }
+.hints .hint { margin: 0; min-height: 0; }
+.hints > * + * { margin-left: 8px; text-align: right; }
+.ib-compact .btn.big { margin-top: 4px; }
+.hints #ib-total { white-space: nowrap; flex: none; }

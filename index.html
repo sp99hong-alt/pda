@@ -52,26 +52,22 @@
     </div>
 
     <!-- 국내/해외입고 -->
-    <div id="pane-inbound" class="pane hidden">
-      <div class="fixed-banner">
-        <span class="fb-k"><span id="ib-title">해외입고</span> 이동셀 고정</span><b id="ib-fixed">-</b>
-      </div>
+    <div id="pane-inbound" class="pane hidden ib-compact">
       <div class="card">
+        <div class="fixed-banner">
+          <span class="fb-k"><span id="ib-title">해외입고</span> 이동셀 고정</span><b id="ib-fixed">-</b>
+        </div>
         <div class="field">
-          <div class="flabel"><i class="no">1</i>상품 바코드 스캔</div>
+          <div class="flabel"><i class="no">1</i>상품 바코드</div>
           <div class="row"><input id="ib-barcode" class="scan" inputmode="none" autocomplete="off" placeholder="상품 바코드 스캔"><button class="kbd" data-for="ib-barcode" type="button">⌨</button></div>
           <div id="ib-item" class="iteminfo"></div>
         </div>
-        <div class="row2">
-          <div class="field"><div class="flabel"><i class="no">2</i>박스 수량</div><input id="ib-box" class="num" inputmode="numeric" value="1" autocomplete="off"></div>
-          <div class="field"><div class="flabel">낱개(빠진수량)</div><input id="ib-loose" class="num" inputmode="numeric" value="0" autocomplete="off"></div>
+        <div class="row3">
+          <div class="field"><div class="flabel"><i class="no">2</i>박스</div><input id="ib-box" class="num" inputmode="numeric" value="1" autocomplete="off"></div>
+          <div class="field"><div class="flabel">낱개</div><input id="ib-loose" class="num" inputmode="numeric" value="0" autocomplete="off"></div>
+          <div class="field"><div class="flabel"><i class="no">3</i>유통기한 <span class="muted">선택</span></div><input id="ib-exp" class="exp" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="YYMMDD"></div>
         </div>
-        <div id="ib-total" class="hint"></div>
-        <div class="field">
-          <div class="flabel"><i class="no">3</i>유통기한 <span class="muted">YYMMDD · 비대상은 비워 두기</span></div>
-          <input id="ib-exp" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="예: 271231">
-          <div id="ib-exp-view" class="hint"></div>
-        </div>
+        <div class="hints"><div id="ib-total" class="hint"></div><div id="ib-exp-view" class="hint"></div></div>
         <div class="field">
           <div class="flabel"><i class="no">4</i>적치빈 스캔 <span class="accent">스캔하면 바로 저장</span></div>
           <div class="row"><input id="ib-to" class="scan" inputmode="none" autocomplete="off" placeholder="적치빈 바코드 스캔"><button class="kbd" data-for="ib-to" type="button">⌨</button></div>
