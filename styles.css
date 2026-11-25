@@ -161,7 +161,8 @@ label.check input { width: 20px; height: 20px; margin: 0; accent-color: var(--ac
   border: 1px dashed var(--line2); border-radius: 12px; }
 
 /* 메뉴·모달·토스트 */
-.overlay { position: fixed; inset: 0; background: rgba(31,30,27,.45); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0;   /* inset 은 구형 Chrome(PM85) 미지원 */
+  background: rgba(31,30,27,.45); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
 #menu { align-items: flex-start; justify-content: flex-end; padding: 0; }
 .menu-panel { background: var(--surface); width: 270px; max-width: 85vw; min-height: 100%; padding: 14px 10px; }
 .menu-user { padding: 8px 8px 14px; border-bottom: 1px solid var(--line); margin-bottom: 8px; font-size: 15px; line-height: 1.5; }
