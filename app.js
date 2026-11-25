@@ -132,6 +132,24 @@ function onEnter(el, fn) {
   el.addEventListener('input', () => el.classList.remove('err'));
 }
 
+// 스캔 칸: Enter 로 처리하고, 스캐너가 Enter 를 안 보내도 입력이 멈추면(0.3초) 같은 처리.
+// Enter 뒤에 입력 신호가 늦게 오는 기기에서 같은 값을 두 번 처리하지 않음. ⌨ 직접 입력 중에는 Enter 만 기다림
+function onScan(el, fn) {
+  let t = 0, ran = null;
+  const run = () => { clearTimeout(t); ran = el.value; fn(); };
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.keyCode === 13) { e.preventDefault(); run(); }
+  });
+  el.addEventListener('input', () => {
+    el.classList.remove('err');
+    clearTimeout(t);
+    if (el.value === ran) return;
+    ran = null;
+    if (el.getAttribute('inputmode') !== 'none' || !norm(el.value)) return;
+    t = setTimeout(run, 300);
+  });
+}
+
 function focusSel(el) {
   setTimeout(() => { el.focus(); if (el.select) el.select(); }, 30);
 }
@@ -1107,7 +1125,7 @@ function bind() {
   document.querySelectorAll('.mode-tabs button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 
   // 입고
-  onEnter($('ib-barcode'), () => {
+  onScan($('ib-barcode'), () => {
     if (!norm($('ib-barcode').value)) return;
     if (ibLookup()) {
       beep(true);
@@ -1116,17 +1134,19 @@ function bind() {
       focusSel($('ib-box'));
     } else fail($('ib-barcode'), '바코드마스터에 없는 바코드입니다.');
   });
-  $('ib-barcode').addEventListener('input', () => { S.ibItem = null; $('ib-item').textContent = ''; $('ib-total').textContent = ''; });
+  $('ib-barcode').addEventListener('input', () => {
+    if (S.ibItem && S.ibItem.barcode === norm($('ib-barcode').value)) return;   // 늦게 온 같은 값
+    S.ibItem = null; $('ib-item').textContent = ''; $('ib-total').textContent = ''; });
   onEnter($('ib-box'), () => focusSel($('ib-loose')));
   onEnter($('ib-loose'), () => focusSel($('ib-exp')));
   onEnter($('ib-exp'), () => { const p = showExp($('ib-exp'), $('ib-exp-view')); if (p.ok || p.empty) focusSel($('ib-to')); else fail($('ib-exp'), p.msg); });
-  onEnter($('ib-to'), ibSave);
+  onScan($('ib-to'), ibSave);
   ['ib-box', 'ib-loose'].forEach(id => $(id).addEventListener('input', ibTotal));
   $('ib-exp').addEventListener('input', () => showExp($('ib-exp'), $('ib-exp-view')));
   $('ib-save').onclick = ibSave;
 
   // 빈병합
-  onEnter($('bin-from'), binFixFrom);
+  onScan($('bin-from'), binFixFrom);
   $('bin-from-next').onclick = binFixFrom;
   document.querySelectorAll('#bin-s2 .seg button').forEach(b => b.onclick = () => {
     if (S.bin.scanMode === b.dataset.scan) return;
@@ -1134,12 +1154,12 @@ function bind() {
     S.bin.scanMode = b.dataset.scan;
     binRender();
   });
-  onEnter($('bin-barcode'), () => {
+  onScan($('bin-barcode'), () => {
     if (!norm($('bin-barcode').value)) return;
     if (S.bin.scanMode === '다건') { binAddBasket(); return; }
     if (binLookup()) { beep(true); focusSel($('bin-qty')); } else fail($('bin-barcode'), '바코드마스터에 없는 바코드입니다.');
   });
-  $('bin-barcode').addEventListener('input', () => { if (S.bin.scanMode === '단건') { S.bin.item = null; $('bin-item').textContent = ''; } });
+  $('bin-barcode').addEventListener('input', () => { if (S.bin.scanMode === '단건' && !(S.bin.item && S.bin.item.barcode === norm($('bin-barcode').value))) { S.bin.item = null; $('bin-item').textContent = ''; } });
   onEnter($('bin-qty'), () => focusSel($('bin-exp')));
   onEnter($('bin-exp'), () => { if (S.bin.scanMode === '다건') focusSel($('bin-barcode')); else binToStep3(); });
   $('bin-exp').addEventListener('input', () => showExp($('bin-exp'), $('bin-exp-view')));
@@ -1158,7 +1178,7 @@ function bind() {
       binRender();
     }
   };
-  onEnter($('bin-to'), binSave);
+  onScan($('bin-to'), binSave);
   $('bin-save').onclick = binSave;
   $('bin-back').onclick = () => { S.bin.step = 2; S.bin.pending = null; binRender(); };
   $('bin-empty').onclick = () => binCloseJob(true);
