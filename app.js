@@ -70,7 +70,7 @@ function fail(el, msg) {
   return false;
 }
 
-function modal({ title, body = '', html = false, buttons, onOpen }) {
+function modal({ title, body = '', html = false, buttons, onOpen, column = false }) {
   buttons = buttons || [{ label: '확인', value: true, cls: 'primary' }];
   return new Promise(resolve => {
     $('modal-title').textContent = title;
@@ -78,6 +78,7 @@ function modal({ title, body = '', html = false, buttons, onOpen }) {
     if (html) b.innerHTML = body; else b.textContent = body;
     const bw = $('modal-btns');
     bw.innerHTML = '';
+    bw.classList.toggle('col', column);   // 버튼 글자가 길면 세로로
     const close = v => {
       $('modal').classList.add('hidden');
       document.removeEventListener('keydown', onKey, true);
@@ -208,19 +209,43 @@ const EMPTY_MASTER = { centers: [], barcodes: [], locations: {}, activeUsers: []
 
 const hasBarcodes = () => (S.master.barcodes || []).length > 0 && !!S.master.bcVer;
 
+// S.bcMulti: 한 바코드가 여러 품목에 걸린 경우(바코드 → 품목 목록). 스캔할 때 고르게 함
 function buildMaps() {
   S.bcMap = new Map();
+  S.bcMulti = new Map();
+  S.pick = null;
   const items = new Map();
   for (const [barcode, item, name, ipsu] of (S.master.barcodes || [])) {
     const o = { barcode, item, name, ipsu: Number(ipsu) || 0 };
-    S.bcMap.set(barcode.toUpperCase(), o);
+    const k = barcode.toUpperCase();
+    const prev = S.bcMap.get(k);
+    if (prev && prev.item !== item) S.bcMulti.set(k, (S.bcMulti.get(k) || [prev]).concat([o]));
+    if (!prev) S.bcMap.set(k, o);
     if (item && !items.has(item.toUpperCase())) items.set(item.toUpperCase(), o);
   }
   for (const [k, o] of items) if (!S.bcMap.has(k)) S.bcMap.set(k, o);
 }
 
 function lookup(code) {
-  return S.bcMap.get(norm(code).toUpperCase()) || null;
+  const k = norm(code).toUpperCase();
+  if (S.pick && S.pick.code === k) return S.pick.o;
+  return S.bcMap.get(k) || null;
+}
+
+// 여러 품목에 걸린 바코드면 품목을 고르게 하고 기억(lookup 이 고른 품목을 돌려줌). 취소하면 false
+async function choosePick(code) {
+  const k = norm(code).toUpperCase();
+  const list = S.bcMulti && S.bcMulti.get(k);
+  if (!list) return true;
+  beep(true);
+  const v = await modal({
+    title: '품목 선택', body: `바코드 ${norm(code)} 에 품목이 ${list.length}개 등록돼 있습니다. 실제 상품을 고르세요.`, column: true,
+    buttons: list.map((o, i) => ({ label: `${o.item} · ${o.name}${o.ipsu ? ` · 입수 ${o.ipsu}` : ''}`, value: i, cls: 'primary' }))
+      .concat([{ label: '취소', value: null }])
+  });
+  if (v === null || v === undefined) return false;
+  S.pick = { code: k, o: list[v] };
+  return true;
 }
 
 function validCell(cell) {
@@ -617,6 +642,7 @@ async function ibSave() {
   if (!fc) return fail(null, `[센터] 시트에 ${S.mode} 고정셀이 설정되지 않았습니다.`);
   const bcEl = $('ib-barcode'), boxEl = $('ib-box'), looseEl = $('ib-loose'), expEl = $('ib-exp'), toEl = $('ib-to');
   if (!S.ibItem || S.ibItem.barcode !== norm(bcEl.value)) {
+    if (!await choosePick(bcEl.value)) return;
     if (!ibLookup()) return fail(bcEl, norm(bcEl.value) ? '바코드마스터에 없는 바코드입니다.' : '상품 바코드를 스캔하세요.');
   }
   const box = intVal(boxEl), loose = intVal(looseEl);
@@ -764,6 +790,7 @@ async function binToStep3() {
   } else {
     const bcEl = $('bin-barcode');
     if (!b.item || b.item.barcode !== norm(bcEl.value)) {
+      if (!await choosePick(bcEl.value)) return;
       if (!binLookup()) return fail(bcEl, norm(bcEl.value) ? '바코드마스터에 없는 바코드입니다.' : '상품 바코드를 스캔하세요.');
     }
     const qty = intVal($('bin-qty'));
@@ -784,7 +811,7 @@ async function binAddBasket() {
   const qty = intVal($('bin-qty')) || 1;
   const p = await binExpCheck();
   if (!p) return;
-  const same = S.bin.basket.find(x => x.barcode === it.barcode && x.expiry === p.date);
+  const same = S.bin.basket.find(x => x.barcode === it.barcode && x.item === it.item && x.expiry === p.date);
   if (same) same.qty += qty;
   else S.bin.basket.push(Object.assign({}, it, { qty, expiry: p.date }));
   beep(true);
@@ -1139,8 +1166,9 @@ function bind() {
   document.querySelectorAll('.mode-tabs button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 
   // 입고
-  onScan($('ib-barcode'), () => {
+  onScan($('ib-barcode'), async () => {
     if (!norm($('ib-barcode').value)) return;
+    if (!await choosePick($('ib-barcode').value)) return focusSel($('ib-barcode'));
     if (ibLookup()) {
       beep(true);
       const last = S.lastExp[S.ibItem.barcode];
@@ -1168,8 +1196,9 @@ function bind() {
     S.bin.scanMode = b.dataset.scan;
     binRender();
   });
-  onScan($('bin-barcode'), () => {
+  onScan($('bin-barcode'), async () => {
     if (!norm($('bin-barcode').value)) return;
+    if (!await choosePick($('bin-barcode').value)) return focusSel($('bin-barcode'));
     if (S.bin.scanMode === '다건') { binAddBasket(); return; }
     if (binLookup()) { beep(true); focusSel($('bin-qty')); } else fail($('bin-barcode'), '바코드마스터에 없는 바코드입니다.');
   }, knownBarcode);

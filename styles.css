@@ -213,3 +213,6 @@ label.check input { margin-right: 8px; }
 .hints > * + * { margin-left: 8px; text-align: right; }
 .ib-compact .btn.big { margin-top: 4px; }
 .hints #ib-total { white-space: nowrap; flex: none; }
+.modal-btns.col { flex-direction: column; }
+.modal-btns.col > * + * { margin-left: 0; margin-top: 8px; }
+.modal-btns.col .btn { text-align: left; font-size: 15px; padding: 13px 14px; }
